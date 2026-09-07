@@ -1,0 +1,36 @@
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Allure
+allure-report/
+allure-results/
+
+# Logs
+*.log
+
+# Secrets
+.env
+*.secret
+secrets.properties
+
+# Test recordings
+*.mp4
+*.avi
+*.mov
+
+# Temporary files
+temp/
+tmp/

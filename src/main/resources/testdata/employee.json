@@ -1,0 +1,8 @@
+{
+  "firstName": "Automation",
+  "lastName": "Tester",
+  "employeeId": "",
+  "jobTitle": "QA Engineer",
+  "employmentStatus": "Full-Time Permanent",
+  "profilePicture": "src/test/resources/testdata/profile.png"
+}
