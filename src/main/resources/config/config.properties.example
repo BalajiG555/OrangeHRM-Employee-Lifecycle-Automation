@@ -1,0 +1,25 @@
+# Application
+base.url=https://opensource-demo.orangehrmlive.com/web/index.php/auth/login
+
+# Browser
+browser=chrome
+headless=false
+
+# UI credentials
+username=
+password=
+
+# Timeout
+explicit.wait=15
+
+# API
+api.base.url=https://opensource-demo.orangehrmlive.com/web/index.php
+
+# OrangeHRM OAuth configuration
+api.client.id=
+api.client.secret=
+api.redirect.uri=https://reqres.in
+api.authorization.code=
+
+# API validation
+api.validation.enabled=true

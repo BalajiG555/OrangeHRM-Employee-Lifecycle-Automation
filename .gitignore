@@ -34,3 +34,9 @@ secrets.properties
 # Temporary files
 temp/
 tmp/
+
+# Configuration / Secrets
+src/main/resources/config/config.properties
+.env
+*.secret
+secrets.properties
