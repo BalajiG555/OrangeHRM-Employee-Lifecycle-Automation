@@ -1,227 +1,402 @@
 # OrangeHRM Employee Lifecycle Automation
 
+Selenium + Cucumber + TestNG + REST Assured automation framework for end-to-end Employee Lifecycle Management in OrangeHRM.
+
 ## Overview
 
-This project automates an end-to-end Employee Lifecycle Management workflow for OrangeHRM using:
+This project automates the Employee Lifecycle Management workflow in OrangeHRM using UI and API automation.
 
-* Selenium WebDriver
-* Java
-* Cucumber BDD
-* TestNG
-* REST Assured
-* Allure Reporting
-* Maven
-* Page Object Model (POM)
+The framework covers:
 
-The automation covers the complete employee lifecycle:
+* Admin login
+* Employee creation
+* Dynamic Employee ID generation
+* Profile picture upload
+* Employee search
+* Job Title and Employment Status update
+* UI validation
+* API validation
+* Employee deletion
+* API-based deletion verification
+* Logout validation
+* ESS role-based access validation
 
-1. Login to OrangeHRM
-2. Navigate to PIM
-3. Add a new employee
-4. Create employee using external test data
-5. Generate a unique Employee ID dynamically
-6. Upload employee profile picture
-7. Verify employee creation
-8. Search for the employee using Employee ID
-9. Update Job Title and Employment Status
-10. Verify employee information update
-11. Validate employee details through OrangeHRM APIs
-12. Delete the employee
-13. Verify employee deletion through the UI
-14. Verify employee deletion through the API
-15. Logout
-16. Verify successful logout
+The framework is designed using Page Object Model (POM), reusable utilities, externalized configuration, external test data, API client abstraction, retry handling, failure screenshots, Allure reporting, centralized logging, automatic test-data cleanup, and GitHub Actions CI.
 
 ---
 
 ## Technology Stack
 
-| Technology         | Purpose                             |
-| ------------------ | ----------------------------------- |
-| Java 23            | Programming language                |
-| Selenium 4.48.0    | Web UI automation                   |
-| Cucumber 7.18.1    | BDD framework                       |
-| TestNG 7.10.2      | Test execution                      |
-| REST Assured 5.5.0 | API automation and validation       |
-| Allure 2.29.0      | Test reporting                      |
-| Maven              | Build and dependency management     |
-| Page Object Model  | UI automation design pattern        |
-| Selenium Manager   | Automatic browser driver management |
+| Technology         | Version | Purpose                         |
+| ------------------ | ------: | ------------------------------- |
+| Java               |      23 | Programming language            |
+| Selenium WebDriver |  4.48.0 | UI automation                   |
+| Cucumber           |  7.18.1 | BDD framework                   |
+| TestNG             |  7.10.2 | Test execution and assertions   |
+| REST Assured       |   5.5.0 | API automation                  |
+| Jackson            |  2.22.1 | JSON test-data handling         |
+| Allure             |  2.29.0 | Test reporting                  |
+| Maven              |       - | Build and dependency management |
+| GitHub Actions     |       - | CI/CD                           |
+| Selenium Manager   |       - | Browser driver management       |
 
 ---
 
-## Framework Design
+## Framework Architecture
 
-The framework follows the Page Object Model and separates UI automation, API automation, configuration, test data, utilities, and step definitions.
+The framework follows a layered architecture:
 
 ```text
-                       Feature File
-                            |
-                            v
-                     Step Definitions
-                       /          \
-                      /            \
-                     v              v
-              Page Objects      API Client
-                   |                 |
-                   v                 v
-          Selenium WebDriver     REST Assured
-                   |                 |
-                   \                 /
-                    \               /
-                     v             v
-                       Assertions
-                            |
-                            v
-                      Allure Report
+                    Cucumber Feature
+                           |
+                           v
+                  Step Definitions
+                    /           \
+                   /             \
+                  v               v
+            Page Objects       API Client
+                 |                 |
+                 v                 v
+          Selenium WebDriver   REST Assured
+                 |                 |
+                 \                 /
+                  \               /
+                   v             v
+                    Assertions
+                         |
+                         v
+                 Allure Reporting
 ```
+
+### Main Design Principles
+
+* Page Object Model
+* Base Page abstraction
+* Separation of UI and API layers
+* Reusable utility methods
+* Externalized configuration
+* Environment-specific configuration
+* Externalized test data
+* POJO-based test data handling
+* Dynamic test data generation
+* Explicit waits
+* Thread-safe WebDriver management
+* Thread-local test context
+* Retry handling
+* Failure screenshots
+* Centralized logging
+* API client abstraction
+* Automatic employee cleanup
+* CI/CD integration
 
 ---
 
 ## Project Structure
 
 ```text
-src
-├── main
-│   ├── java
-│   │   └── com
-│   │       ├── api
-│   │       │   └── EmployeeApiClient.java
-│   │       │
-│   │       ├── config
-│   │       │   └── ConfigReader.java
-│   │       │
-│   │       ├── driver
-│   │       │   └── DriverFactory.java
-│   │       │
-│   │       ├── models
-│   │       │   └── Employee.java
-│   │       │
-│   │       ├── pages
-│   │       │   ├── LoginPage.java
-│   │       │   ├── DashboardPage.java
-│   │       │   ├── PIMPage.java
-│   │       │   ├── AddEmployeePage.java
-│   │       │   └── EmployeeDetailsPage.java
-│   │       │
-│   │       └── utils
-│   │           ├── JsonDataReader.java
-│   │           ├── ScreenshotUtils.java
-│   │           └── WaitUtils.java
-│   │
-│   └── resources
-│       └── config
-│           └── config.properties
+OrangeHRM-Employee-Lifecycle-Automation
 │
-└── test
-    ├── java
-    │   └── com
-    │       ├── features
-    │       │   └── employee_lifecycle.feature
-    │       │
-    │       ├── hooks
-    │       │   └── Hooks.java
-    │       │
-    │       ├── runners
-    │       │   └── TestRunner.java
-    │       │
-    │       └── stepdefinitions
-    │           └── EmployeeLifecycleSteps.java
-    │
-    └── resources
-        └── testdata
-            └── profile.png
+├── .github
+│   └── workflows
+│       └── ci.yml
+│
+├── src
+│   ├── main
+│   │   ├── java
+│   │   │   └── com
+│   │   │       ├── api
+│   │   │       │   └── EmployeeApiClient.java
+│   │   │       │
+│   │   │       ├── config
+│   │   │       │   └── ConfigReader.java
+│   │   │       │
+│   │   │       ├── context
+│   │   │       │   └── TestContext.java
+│   │   │       │
+│   │   │       ├── driver
+│   │   │       │   └── DriverFactory.java
+│   │   │       │
+│   │   │       ├── listeners
+│   │   │       │   ├── FlakyTestListener.java
+│   │   │       │   ├── RetryAnalyzer.java
+│   │   │       │   └── RetryListener.java
+│   │   │       │
+│   │   │       ├── models
+│   │   │       │   └── Employee.java
+│   │   │       │
+│   │   │       ├── pages
+│   │   │       │   ├── BasePage.java
+│   │   │       │   ├── LoginPage.java
+│   │   │       │   ├── DashboardPage.java
+│   │   │       │   ├── PIMPage.java
+│   │   │       │   ├── AddEmployeePage.java
+│   │   │       │   └── EmployeeDetailsPage.java
+│   │   │       │
+│   │   │       ├── services
+│   │   │       │   ├── EmployeeService.java
+│   │   │       │   └── TestDataService.java
+│   │   │       │
+│   │   │       └── utils
+│   │   │           ├── JsonDataReader.java
+│   │   │           ├── LocatorUtils.java
+│   │   │           ├── ScreenshotUtils.java
+│   │   │           ├── TestDataGenerator.java
+│   │   │           ├── TestLogger.java
+│   │   │           ├── VideoRecorder.java
+│   │   │           └── WaitUtils.java
+│   │   │
+│   │   └── resources
+│   │       ├── config
+│   │       │   ├── config-dev.properties
+│   │       │   ├── config-qa.properties
+│   │       │   ├── config-prod.properties
+│   │       │   └── config.properties.example
+│   │       │
+│   │       └── testdata
+│   │           └── employee.json
+│   │
+│   └── test
+│       └── java
+│           └── com
+│               ├── feature
+│               │   └── employee_lifecycle.feature
+│               ├── hooks
+│               │   └── Hooks.java
+│               ├── runners
+│               │   └── TestRunner.java
+│               └── stepdefinitions
+│                   └── EmployeeLifecycleSteps.java
+│
+├── .gitignore
+├── pom.xml
+└── testng.xml
 ```
 
 ---
 
-## Prerequisites
+## Key Framework Components
 
-Install the following:
+### BasePage
 
-* Java 23
-* Maven
-* Google Chrome
-* IntelliJ IDEA or another Java IDE
-* Allure CLI (optional for viewing Allure reports)
+`BasePage` provides reusable Selenium operations for all page objects.
 
-Selenium Manager is used for browser driver management. Therefore, **WebDriverManager is not required**.
+Common operations include:
+
+* Waiting for visible elements
+* Waiting for clickable elements
+* Clicking elements
+* Entering text
+* Reading element text
+* Checking element visibility
+
+This avoids duplicating common WebDriver code across individual page classes.
+
+---
+
+### LocatorUtils
+
+`LocatorUtils` provides reusable locator-building methods for OrangeHRM's label-based UI elements.
+
+Examples include:
+
+* Input fields by label
+* Dropdowns by label
+* Dropdown options by text
+
+This keeps dynamic XPath construction centralized and avoids duplicated locator logic.
+
+---
+
+### TestContext
+
+`TestContext` maintains scenario-specific test data using `ThreadLocal`.
+
+It stores information such as:
+
+* Employee test data
+* API responses
+* Employee creation state
+* Employee deletion state
+
+This allows test data to be shared safely between step definitions and hooks.
+
+---
+
+### DriverFactory
+
+`DriverFactory` manages WebDriver creation and lifecycle.
+
+The framework supports:
+
+* Chrome
+* Headless execution
+* Thread-local WebDriver management
+* Selenium Manager for automatic driver management
+
+WebDriverManager is not required.
+
+---
+
+### ConfigReader
+
+`ConfigReader` supports configuration from multiple sources.
+
+The lookup order is:
+
+```text
+1. JVM System Property
+          |
+          v
+2. ORANGEHRM_* Environment Variable
+          |
+          v
+3. Properties File
+```
+
+This allows the framework to use local configuration during development while allowing GitHub Actions to inject sensitive configuration through environment variables.
 
 ---
 
 ## Configuration
 
-Application and API configuration is maintained in:
+The repository contains environment-specific configuration files:
+
+```text
+src/main/resources/config/
+├── config-dev.properties
+├── config-qa.properties
+├── config-prod.properties
+└── config.properties.example
+```
+
+The actual local configuration file is:
 
 ```text
 src/main/resources/config/config.properties
 ```
 
+This file is intentionally excluded from Git because it can contain local credentials and other sensitive configuration.
+
+### Local Execution
+
+For local execution, the framework is intended to use:
+
+```text
+config.properties
+```
+
 Example:
 
 ```properties
-# Application
 base.url=https://opensource-demo.orangehrmlive.com/web/index.php/auth/login
 
-# Browser
 browser=chrome
 headless=false
 
-# UI credentials
 username=Admin
 password=admin123
 
-# Timeout
 explicit.wait=15
 
-# API
-api.base.url=https://opensource-demo.orangehrmlive.com/web/index.php
+api.base.url=https://opensource-demo.orangehrmlive.com
 
-# OrangeHRM OAuth configuration
 api.client.id=<your-client-id>
 api.client.secret=<your-client-secret>
-api.redirect.uri=https://reqres.in
+api.redirect.uri=<your-redirect-uri>
 api.authorization.code=<your-authorization-code>
 
-# API validation
 api.validation.enabled=true
+
+ess.username=<ess-username>
+ess.password=<ess-password>
 ```
 
-### Configuration Override
-
-Configuration values can also be overridden through Maven system properties.
-
-For example:
-
-```bash
-mvn clean test -Dbrowser=chrome
-```
-
-or:
-
-```bash
-mvn clean test -Dheadless=true
-```
-
-This allows the framework to be executed with different runtime configurations without modifying the properties file.
+Do not commit the actual `config.properties` file to source control.
 
 ---
 
-## Security
+## Environment Selection
 
-API credentials and authorization codes should **never be committed to source control**.
+The framework supports:
 
-For a real project, sensitive values should be supplied through:
+```text
+local
+dev
+qa
+prod
+```
 
-* Environment variables
-* CI/CD secrets
-* Secure configuration management
+The environment can be selected using the Maven system property:
 
-The authorization code used by the OrangeHRM OAuth flow may be short-lived and/or single-use, so a fresh authorization code may be required for subsequent test executions.
+```bash
+mvn clean test -Denv=qa
+```
+
+Examples:
+
+```bash
+mvn clean test -Denv=dev
+mvn clean test -Denv=qa
+mvn clean test -Denv=prod
+```
+
+If no environment is specified, `local` is used by default.
+
+For local execution, the base configuration is loaded from `config.properties`.
+
+For non-local environments, the corresponding environment-specific properties file is loaded.
 
 ---
 
-# Test Data
+## Security and Secrets
+
+Sensitive information should never be committed to Git.
+
+The following values should be kept outside source control:
+
+* Application passwords
+* API client IDs
+* API client secrets
+* OAuth authorization codes
+* ESS credentials
+* Other environment-specific secrets
+
+The actual local configuration file is excluded through `.gitignore`:
+
+```text
+src/main/resources/config/config.properties
+```
+
+### GitHub Actions Secrets
+
+GitHub Actions uses repository secrets to supply sensitive configuration during CI execution.
+
+The workflow expects the following repository secret names:
+
+```text
+ORANGEHRM_USERNAME
+ORANGEHRM_PASSWORD
+
+ORANGEHRM_API_BASE_URL
+ORANGEHRM_API_CLIENT_ID
+ORANGEHRM_API_CLIENT_SECRET
+ORANGEHRM_API_REDIRECT_URI
+ORANGEHRM_API_AUTHORIZATION_CODE
+ORANGEHRM_API_VALIDATION_ENABLED
+
+ORANGEHRM_ESS_USERNAME
+ORANGEHRM_ESS_PASSWORD
+```
+
+The actual secret values are stored securely in GitHub and are not committed to the repository.
+
+The CI workflow maps these secrets to the corresponding `ORANGEHRM_*` environment variables consumed by `ConfigReader`.
+
+This keeps credentials and other sensitive values outside the source code.
+
+---
+
+## Test Data
 
 Employee test data is maintained externally in:
 
@@ -235,67 +410,106 @@ Example:
 {
   "firstName": "Automation",
   "lastName": "Tester",
-  "employeeId": "",
   "jobTitle": "QA Engineer",
-  "employmentStatus": "Full-Time Permanent"
+  "employmentStatus": "Full-Time Permanent",
+  "profilePicture": "src/test/resources/testdata/profile.png"
 }
 ```
 
 The `Employee` class acts as the POJO/model for employee test data.
 
-The Employee ID is generated dynamically during test execution to avoid duplicate employee records.
+---
 
-The generated Employee ID is stored in the `Employee` POJO and can be retrieved using:
+## Dynamic Employee Data
 
-```java
-employee.getEmployeeId()
-```
+`TestDataGenerator` creates unique employee data for each execution.
+
+The framework dynamically generates:
+
+* First Name
+* Last Name
+* Employee ID
+
+This reduces the possibility of duplicate employee records during repeated executions.
+
+The generated values are stored in the `Employee` POJO and shared through `TestContext`.
 
 ---
 
-# Profile Picture
+## Employee Lifecycle Scenarios
 
-The employee profile picture used during employee creation is maintained under:
+The Cucumber feature file is:
 
 ```text
-src/test/resources/testdata/profile.png
+src/test/java/com/feature/employee_lifecycle.feature
 ```
 
-The image is treated as test data and is used during the employee profile picture upload flow.
+The current scenarios are:
 
-Keeping the image in the test resources makes the test asset easy to maintain and separate from the application/framework source code.
+### Smoke
+
+* Login with valid credentials
+* Logout successfully
+
+### Regression
+
+* Create a new employee
+* Update Job Title and Employment Status
+* Validate employee details through API
+* Delete an employee
+
+### Role-Based
+
+* Validate ESS role access
+* Verify that ESS users cannot access the Admin module
 
 ---
 
-# Feature File
+## Cucumber Tags
 
-The Cucumber feature file is maintained under:
+The framework uses tags to control test execution:
 
 ```text
-src/test/java/com/features/employee_lifecycle.feature
+@smoke
+@regression
+@roleBased
 ```
 
-The feature file describes the employee lifecycle scenario using Gherkin syntax.
+Examples:
 
-The scenario covers the complete flow from employee creation through deletion and logout.
+```bash
+mvn clean test -Dcucumber.filter.tags="@smoke"
+```
+
+```bash
+mvn clean test -Dcucumber.filter.tags="@regression"
+```
+
+```bash
+mvn clean test -Dcucumber.filter.tags="@roleBased"
+```
 
 ---
 
-# API Validation
+## API Automation
 
-API validation is implemented using **REST Assured** and is integrated into the employee lifecycle scenario.
+API automation is implemented using REST Assured and encapsulated in:
 
-The API validation uses three OrangeHRM APIs.
+```text
+EmployeeApiClient.java
+```
 
-## API 1 – OAuth Token
+The API client handles authentication and employee retrieval while the Cucumber step definitions orchestrate the business flow.
 
-The first API is used to obtain an access token.
+### OAuth Authentication
+
+The framework obtains an access token using:
 
 ```text
 POST /oauth2/token
 ```
 
-The request uses:
+The OAuth request uses:
 
 ```text
 grant_type
@@ -305,190 +519,91 @@ client_secret
 redirect_uri
 ```
 
-The `access_token` returned by this API is stored dynamically in `EmployeeApiClient`.
+The returned access token is stored dynamically in `EmployeeApiClient`.
 
-The same access token is then used for the subsequent employee APIs.
-
----
-
-## API 2 – Get Employees
-
-The second API retrieves employees:
-
-```text
-GET /api/v2/pim/employees?limit=10
-```
-
-The request uses:
-
-```text
-Authorization: Bearer <access_token>
-```
-
-The response contains multiple employee records.
-
-The automation takes the dynamically generated Employee ID from the `Employee` POJO:
-
-```java
-String employeeId = employee.getEmployeeId();
-```
-
-It then searches the API 2 response for the matching:
-
-```text
-employeeId
-```
-
-Once the matching employee is found, the automation captures:
-
-```text
-empNumber
-```
-
-For example:
-
-```text
-Employee ID = 07142658
-empNumber   = 512
-```
+The same Bearer token is then used for subsequent employee API requests.
 
 ---
 
-## API 3 – Get Employee Details
+## Employee API Validation Flow
 
-The third API retrieves the employee using the internal OrangeHRM employee number.
-
-```text
-GET /api/v2/pim/employees/{empNumber}
-```
-
-For example:
-
-```text
-GET /api/v2/pim/employees/512
-```
-
-The important distinction is:
-
-```text
-Employee ID
-    |
-    | Used to find employee in API 2
-    v
-07142658
-    |
-    | API 2 response
-    v
-empNumber = 512
-    |
-    | Used by API 3
-    v
-GET /api/v2/pim/employees/512
-```
-
-This prevents the UI Employee ID from being incorrectly passed directly to API 3.
-
----
-
-## API Validation Flow
-
-The complete API validation flow is:
+The API validation flow is:
 
 ```text
 UI creates employee
         |
         v
-Employee POJO stores dynamic Employee ID
+Employee POJO stores Employee ID
         |
         v
-API 1
-OAuth Token
+OAuth Token API
         |
         | access_token
         v
-API 2
-Get Employees
+Get Employees API
         |
-        | Search employeeId
+        | search employeeId
         v
 Find matching employee
         |
-        | Capture empNumber
+        | capture empNumber
         v
-API 3
-Get Employee Details
+Get Employee Details API
         |
         v
-Validate employee details
+Validate employee information
 ```
 
----
-
-# UI vs API Validation
-
-The same employee data is used across the UI and API layers.
+### API 1 – OAuth Token
 
 ```text
-Employee POJO
-     |
-     +---- firstName
-     |
-     +---- lastName
-     |
-     +---- employeeId
-     |
-     +---- jobTitle
-     |
-     +---- employmentStatus
+POST /oauth2/token
 ```
 
-The UI uses these values to create and update the employee.
+Obtains the access token used by subsequent API requests.
 
-The API layer uses the dynamically generated Employee ID to locate the corresponding internal `empNumber` and retrieve the employee details.
+### API 2 – Get Employees
 
-The API response is then validated against the expected employee information.
+```text
+GET /api/v2/pim/employees
+```
 
----
+The response is searched using the dynamically generated Employee ID.
 
-# Employee Deletion
+The corresponding internal `empNumber` is obtained from the API response.
 
-After the employee has been created and updated, the automation deletes the employee through the UI.
-
-The framework then performs two validations.
-
-### UI Validation
-
-The employee is searched using the dynamically generated Employee ID.
-
-The test verifies that the employee is no longer present in the employee list.
-
-### API Validation
-
-The internal `empNumber` captured during API validation is retained and reused for the deletion check.
-
-The API request is:
+### API 3 – Get Employee Details
 
 ```text
 GET /api/v2/pim/employees/{empNumber}
 ```
 
-For example:
+The internal `empNumber` is used to retrieve the employee details.
 
-```text
-GET /api/v2/pim/employees/512
-```
-
-Expected result:
-
-```text
-HTTP 404
-```
-
-This provides an additional backend-level verification that the employee was successfully removed.
+The API response is validated against the employee data used by the UI automation.
 
 ---
 
-# API Validation Configuration
+## UI and API Validation
+
+The same employee model is shared between the UI and API layers.
+
+```text
+Employee
+├── firstName
+├── lastName
+├── employeeId
+├── jobTitle
+└── employmentStatus
+```
+
+The UI uses the employee data to create and update the employee.
+
+The API layer uses the generated Employee ID to locate the corresponding employee and validate the returned employee information.
+
+---
+
+## API Validation Configuration
 
 API validation can be enabled or disabled using:
 
@@ -496,87 +611,215 @@ API validation can be enabled or disabled using:
 api.validation.enabled=true
 ```
 
-When enabled:
-
-```text
-UI Validation
-      +
-API Validation
-```
-
-When disabled:
-
-```text
-UI Validation only
-```
-
-This allows the UI automation to be executed independently when API credentials or authorization configuration are unavailable.
-
----
-
-# Wait and Synchronization
-
-The framework uses reusable explicit wait utilities through:
-
-```text
-WaitUtils.java
-```
-
-The framework handles dynamic OrangeHRM UI elements and loading overlays using explicit waits rather than fixed delays.
-
-Interactions with elements that may be temporarily covered by the OrangeHRM form loader are synchronized before performing the action.
-
-This improves test stability and reduces failures caused by timing issues.
-
----
-
-# Screenshot Handling
-
-Screenshot functionality is centralized in:
-
-```text
-ScreenshotUtils.java
-```
-
-The utility is located under:
-
-```text
-src/main/java/com/utils/ScreenshotUtils.java
-```
-
-Screenshots can be captured when a Cucumber scenario fails and attached to the reporting output.
-
-Centralizing screenshot functionality keeps screenshot-related operations separate from the page objects and step definitions.
-
----
-
-# Execute Tests
-
-Run the complete test suite:
-
-```bash
-mvn clean test
-```
-
-Run with a specific browser:
-
-```bash
-mvn clean test -Dbrowser=chrome
-```
-
-Run in headless mode:
-
-```bash
-mvn clean test -Dheadless=true
-```
-
-Enable API validation:
+Enable:
 
 ```bash
 mvn clean test -Dapi.validation.enabled=true
 ```
 
-Disable API validation:
+Disable:
+
+```bash
+mvn clean test -Dapi.validation.enabled=false
+```
+
+When disabled, the UI automation can execute without requiring API validation.
+
+In GitHub Actions, this setting can also be supplied through:
+
+```text
+ORANGEHRM_API_VALIDATION_ENABLED
+```
+
+---
+
+## Employee Deletion
+
+Employee deletion is performed through the UI.
+
+After deletion, the framework validates the employee removal through the UI.
+
+When API validation is enabled, the framework also verifies that the employee no longer exists through the employee API.
+
+This provides both:
+
+```text
+UI Validation
++
+Backend API Validation
+```
+
+---
+
+## Test Cleanup
+
+The framework contains automatic cleanup logic in `Hooks.java`.
+
+If an employee was created successfully but was not deleted by the scenario, the `@After` hook attempts to delete the employee automatically.
+
+This helps prevent test data from accumulating in the OrangeHRM environment.
+
+The cleanup is designed to avoid masking the original scenario failure.
+
+---
+
+## Wait and Synchronization
+
+The framework uses reusable explicit waits through:
+
+```text
+WaitUtils.java
+```
+
+The framework avoids unnecessary hard-coded delays.
+
+Explicit waits are used for:
+
+* Element visibility
+* Element clickability
+* Loader disappearance
+* Dynamic UI elements
+* OrangeHRM form overlays
+
+This improves stability when interacting with dynamic OrangeHRM UI components.
+
+---
+
+## Retry and Flaky Test Handling
+
+The framework includes:
+
+```text
+RetryAnalyzer.java
+RetryListener.java
+FlakyTestListener.java
+```
+
+A failed TestNG test can be retried once.
+
+The framework also logs when:
+
+* A test is retried
+* A test passes after retry
+* A test still fails after the retry
+
+This helps identify potentially flaky tests without hiding the original failure.
+
+---
+
+## Failure Handling
+
+When a Cucumber scenario fails:
+
+1. The failure is logged.
+2. A screenshot is captured.
+3. The screenshot is attached to Allure.
+4. Test cleanup is attempted when applicable.
+5. The browser is closed.
+
+This provides additional information for troubleshooting failed UI scenarios.
+
+---
+
+## Logging
+
+Centralized logging is provided through:
+
+```text
+TestLogger.java
+```
+
+The framework logs important events such as:
+
+* Scenario start
+* Driver initialization
+* API authentication
+* API response status
+* Test retry attempts
+* Employee cleanup
+* Scenario failures
+
+---
+
+## Allure Reporting
+
+Allure is integrated using the Cucumber 7 adapter.
+
+Generated results are stored under:
+
+```text
+allure-results/
+```
+
+The generated Allure report can be viewed locally using:
+
+```bash
+allure serve allure-results
+```
+
+The report can contain:
+
+* Scenario execution details
+* Step execution status
+* Environment information
+* Screenshots
+* API response attachments
+* Failure information
+* Retry information
+
+---
+
+## Cucumber Reporting
+
+Cucumber HTML reporting is generated under:
+
+```text
+target/cucumber-reports/
+```
+
+GitHub Actions uploads the generated Cucumber reports as workflow artifacts.
+
+---
+
+## Running Tests Locally
+
+### Run the complete test suite
+
+```bash
+mvn clean test
+```
+
+### Run Smoke tests
+
+```bash
+mvn clean test -Dcucumber.filter.tags="@smoke"
+```
+
+### Run Regression tests
+
+```bash
+mvn clean test -Dcucumber.filter.tags="@regression"
+```
+
+### Run Role-Based tests
+
+```bash
+mvn clean test -Dcucumber.filter.tags="@roleBased"
+```
+
+### Run using a specific environment
+
+```bash
+mvn clean test -Denv=qa
+```
+
+### Run in headless mode
+
+```bash
+mvn clean test -Dheadless=true
+```
+
+### Disable API validation
 
 ```bash
 mvn clean test -Dapi.validation.enabled=false
@@ -584,134 +827,193 @@ mvn clean test -Dapi.validation.enabled=false
 
 ---
 
-# Cucumber Report
+## CI/CD – GitHub Actions
 
-After execution, the Cucumber HTML report is generated under:
+The project uses GitHub Actions for CI execution.
+
+Workflow:
 
 ```text
-target/cucumber-reports/cucumber.html
+.github/workflows/ci.yml
 ```
 
-The Cucumber JSON report is also generated under the configured Cucumber report location.
+The workflow supports:
+
+* Push to `main`
+* Pull requests targeting `main`
+* Manual workflow execution
+* Environment selection
+* Smoke test execution
+* Regression test execution
+* Maven dependency caching
+* Cucumber report artifacts
+* Allure result artifacts
+* Test artifacts
+
+### Manual Execution
+
+The workflow supports selecting:
+
+```text
+Environment:
+- dev
+- qa
+- prod
+
+Test Suite:
+- smoke
+- regression
+```
+
+The selected values are passed to Maven using:
+
+```text
+-Denv=<environment>
+-Dcucumber.filter.tags="@<test-suite>"
+```
+
+### CI Configuration
+
+GitHub Actions supplies sensitive configuration through repository secrets.
+
+The workflow maps GitHub secrets to `ORANGEHRM_*` environment variables before Maven execution.
+
+This allows CI to run without storing credentials or API secrets in the repository.
+
+The local `config.properties` file is not required to contain CI credentials.
 
 ---
 
-# Allure Report
+## Browser Driver Management
 
-Allure results are generated under:
+The project uses Selenium Manager provided by Selenium.
 
-```text
-target/allure-results
-```
+No separate WebDriverManager dependency is required.
 
-To generate and open the Allure report:
+Selenium automatically manages the required browser driver.
+
+---
+
+## Maven
+
+Maven is used for:
+
+* Dependency management
+* Compilation
+* Test execution
+* Build lifecycle management
+
+Run:
 
 ```bash
-allure serve target/allure-results
+mvn clean test
 ```
 
-The report can contain:
-
-* Scenario execution details
-* Step execution status
-* Screenshots for failed scenarios
-* API response attachments
-* Failure information
-
 ---
 
-# Failure Handling
+## Coding Practices
 
-When a Cucumber scenario fails:
-
-* A screenshot is automatically captured.
-* The screenshot is attached to the Allure report.
-* Cucumber HTML and JSON reports are generated.
-* API responses can be attached to Allure when API validation is executed.
-
-This helps identify whether a failure occurred in:
-
-* UI automation
-* API automation
-* UI/API data validation
-* Test data handling
-
----
-
-# Coding Practices
-
-The framework follows:
+The framework follows the following practices:
 
 * Page Object Model
 * Single Responsibility Principle
 * Separation of UI and API layers
 * Reusable utility methods
+* Base Page abstraction
+* Centralized locator utilities
 * Explicit waits
 * Externalized test data
 * Externalized configuration
+* Environment-specific configuration
 * POJO-based test data handling
 * Dynamic Employee ID generation
 * Meaningful assertions
 * Thread-safe WebDriver management
-* No hard-coded credentials in test classes
-* Selenium Manager for driver management
-* REST Assured for API automation
+* Thread-local test context
+* Centralized logging
+* Automatic test-data cleanup
+* Retry handling
+* Failure screenshots
+* API client abstraction
+* Selenium Manager
+* No hard-coded secrets in test classes
 
 ---
 
-# Current API Architecture
-
-The API automation is encapsulated inside:
+## Test Execution Flow
 
 ```text
-EmployeeApiClient.java
+Cucumber Feature
+       |
+       v
+Hooks - Setup
+       |
+       v
+DriverFactory
+       |
+       v
+Step Definitions
+       |
+       +--------------------+
+       |                    |
+       v                    v
+Page Objects          EmployeeApiClient
+       |                    |
+       v                    v
+Selenium             REST Assured
+       |                    |
+       +---------+----------+
+                 |
+                 v
+             Assertions
+                 |
+                 v
+          Scenario Result
+                 |
+          +------+------+
+          |             |
+          v             v
+      Screenshot      Allure
+          |
+          v
+       Cleanup
+          |
+          v
+      Driver Quit
 ```
-
-The class is responsible for:
-
-```text
-authenticate()
-     |
-     v
-getEmployees()
-     |
-     v
-findEmployeeNumber()
-     |
-     v
-getEmployee()
-```
-
-The step definitions orchestrate the API calls, while the API client handles the REST Assured implementation.
-
-This keeps API implementation details separate from the Cucumber step definitions.
 
 ---
 
-# Future Enhancements
+## Repository
 
-Possible future improvements include:
+GitHub repository:
+
+`https://github.com/BalajiG555/OrangeHRM-Employee-Lifecycle-Automation`
+
+---
+
+## Future Enhancements
+
+Potential future improvements include:
 
 * Parallel execution
 * Cross-browser execution
-* CI/CD integration
-* Dockerized Selenium Grid
-* Retry mechanism
-* Environment-specific configuration
 * API schema validation
 * API response POJOs
 * Advanced Allure attachments
-* Automated video recording
-* API pagination handling
 * Improved OAuth token management
-* Environment variables for sensitive credentials
+* API pagination handling
 * API validation of Job Title and Employment Status
 * Reusable API assertion utilities
+* Dockerized Selenium Grid
+* Expanded environment-specific CI execution
 
 ---
 
-# Author
+## Author
+
+**Balaji G**
 
 QA Automation Engineer
 
-**Selenium | Java | Cucumber | TestNG | REST Assured | API Automation**
+`Selenium | Java | Cucumber | TestNG | REST Assured | API Automation`

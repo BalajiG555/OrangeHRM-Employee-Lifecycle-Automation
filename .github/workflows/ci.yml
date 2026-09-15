@@ -49,22 +49,18 @@ jobs:
           -Denv=${{ inputs.environment || 'qa' }}
           -Dcucumber.filter.tags="@${{ inputs.test_suite || 'regression' }}"
         env:
-          BASE_URL: ${{ secrets.BASE_URL }}
-          ORANGEHRM_USERNAME: ${{ secrets.USERNAME }}
-          ORANGEHRM_PASSWORD: ${{ secrets.PASSWORD }}
+          ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
+          ORANGEHRM_PASSWORD: ${{ secrets.ORANGEHRM_PASSWORD }}
+          ORANGEHRM_API_BASE_URL: ${{ secrets.ORANGEHRM_API_BASE_URL }}
 
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          API_ACCESS_TOKEN: ${{ secrets.API_ACCESS_TOKEN }}
+          ORANGEHRM_API_CLIENT_ID: ${{ secrets.ORANGEHRM_API_CLIENT_ID }}
+          ORANGEHRM_API_CLIENT_SECRET: ${{ secrets.ORANGEHRM_API_CLIENT_SECRET }}
 
-          API_CLIENT_ID: ${{ secrets.API_CLIENT_ID }}
-          API_REDIRECT_URI: ${{ secrets.API_REDIRECT_URI }}
-          API_AUTHORIZATION_CODE: ${{ secrets.API_AUTHORIZATION_CODE }}
-          API_CODE_VERIFIER: ${{ secrets.API_CODE_VERIFIER }}
-
-          API_VALIDATION_ENABLED: 'true'
-
-          ESS_USERNAME: ${{ secrets.ESS_USERNAME }}
-          ESS_PASSWORD: ${{ secrets.ESS_PASSWORD }}
+          ORANGEHRM_API_REDIRECT_URI: ${{ secrets.ORANGEHRM_API_REDIRECT_URI }}
+          ORANGEHRM_API_AUTHORIZATION_CODE: ${{ secrets.ORANGEHRM_API_AUTHORIZATION_CODE }}
+          ORANGEHRM_API_VALIDATION_ENABLED: ${{ secrets.ORANGEHRM_API_VALIDATION_ENABLED }}
+          ORANGEHRM_ESS_USERNAME: ${{ secrets.ORANGEHRM_ESS_USERNAME }}
+          ORANGEHRM_ESS_PASSWORD: ${{ secrets.ORANGEHRM_ESS_PASSWORD }}
 
       - name: Upload Cucumber reports
         if: always()
