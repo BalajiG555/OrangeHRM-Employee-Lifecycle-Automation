@@ -15,11 +15,19 @@ explicit.wait=15
 # API
 api.base.url=https://opensource-demo.orangehrmlive.com/web/index.php
 
-# OrangeHRM OAuth configuration
+# API OAuth2 / PKCE
 api.client.id=
-api.client.secret=
-api.redirect.uri=https://reqres.in
+api.redirect.uri=
 api.authorization.code=
+api.code.verifier=
+
+# Optional: use a freshly generated access token instead
+# This takes priority over authorization-code authentication.
+api.access.token=
 
 # API validation
 api.validation.enabled=true
+
+# Role-based test credentials
+ess.username=
+ess.password=

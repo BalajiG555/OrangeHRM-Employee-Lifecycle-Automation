@@ -3,9 +3,30 @@ name: OrangeHRM Automation Tests
 on:
   push:
     branches: [main]
+
   pull_request:
     branches: [main]
+
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Test environment
+        required: true
+        default: qa
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+
+      test_suite:
+        description: Test suite
+        required: true
+        default: regression
+        type: choice
+        options:
+          - smoke
+          - regression
 
 jobs:
   test:
@@ -23,24 +44,48 @@ jobs:
           cache: maven
 
       - name: Run Maven tests
-        run: mvn clean test
+        run: >
+          mvn clean test
+          -Denv=${{ inputs.environment || 'qa' }}
+          -Dcucumber.filter.tags="@${{ inputs.test_suite || 'regression' }}"
         env:
           BASE_URL: ${{ secrets.BASE_URL }}
-          USERNAME: ${{ secrets.USERNAME }}
-          PASSWORD: ${{ secrets.PASSWORD }}
+          ORANGEHRM_USERNAME: ${{ secrets.USERNAME }}
+          ORANGEHRM_PASSWORD: ${{ secrets.PASSWORD }}
+
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          API_ACCESS_TOKEN: ${{ secrets.API_ACCESS_TOKEN }}
+
           API_CLIENT_ID: ${{ secrets.API_CLIENT_ID }}
-          API_CLIENT_SECRET: ${{ secrets.API_CLIENT_SECRET }}
           API_REDIRECT_URI: ${{ secrets.API_REDIRECT_URI }}
           API_AUTHORIZATION_CODE: ${{ secrets.API_AUTHORIZATION_CODE }}
+          API_CODE_VERIFIER: ${{ secrets.API_CODE_VERIFIER }}
+
           API_VALIDATION_ENABLED: 'true'
 
-      - name: Upload test reports
+          ESS_USERNAME: ${{ secrets.ESS_USERNAME }}
+          ESS_PASSWORD: ${{ secrets.ESS_PASSWORD }}
+
+      - name: Upload Cucumber reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: |
-            target/
-            allure-results/
+          name: cucumber-reports
+          path: target/cucumber-reports/
+          if-no-files-found: ignore
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results/
+          if-no-files-found: ignore
+
+      - name: Upload screenshots and test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: target/
           if-no-files-found: ignore

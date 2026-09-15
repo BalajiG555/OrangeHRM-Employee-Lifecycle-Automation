@@ -1,43 +1,49 @@
 package com.pages;
 
-import com.utils.WaitUtils;
+import com.config.ConfigReader;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import com.config.ConfigReader;
 
-public class LoginPage {
+public class LoginPage extends BasePage {
 
-    private final WebDriver driver;
+    private final By usernameField =
+            By.name("username");
 
-    private final By username =
-            By.cssSelector("input[placeholder='Username']");
-
-    private final By password =
-            By.cssSelector("input[placeholder='Password']");
+    private final By passwordField =
+            By.name("password");
 
     private final By loginButton =
             By.cssSelector("button[type='submit']");
 
     public LoginPage(WebDriver driver) {
-        this.driver = driver;
+        super(driver);
     }
 
     public DashboardPage login(
             String username,
             String password) {
 
-        driver.get(ConfigReader.get("base.url"));
-
-        WaitUtils.waitForVisible(this.username)
-                .sendKeys(username);
-
-        WaitUtils.waitForVisible(this.password)
-                .sendKeys(password);
-
-        WaitUtils.waitForClickable(loginButton)
-                .click();
+        enterText(usernameField, username);
+        enterText(passwordField, password);
+        click(loginButton);
 
         return new DashboardPage(driver);
+    }
+
+    public DashboardPage loginWithAdminCredentials() {
+
+        return login(
+                ConfigReader.getRequired("username"),
+                ConfigReader.getRequired("password")
+        );
+    }
+
+    public DashboardPage loginWithEssCredentials() {
+
+        return login(
+                ConfigReader.getRequired("ess.username"),
+                ConfigReader.getRequired("ess.password")
+        );
     }
 }

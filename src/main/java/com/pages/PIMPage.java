@@ -1,13 +1,11 @@
 package com.pages;
 
-import com.utils.WaitUtils;
+import com.utils.LocatorUtils;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-public class PIMPage {
-
-    private final WebDriver driver;
+public class PIMPage extends BasePage {
 
     private final By pimMenu =
             By.xpath("//span[normalize-space()='PIM']");
@@ -19,26 +17,16 @@ public class PIMPage {
             By.xpath("//a[normalize-space()='Employee List']");
 
     private final By employeeIdSearch =
-            By.xpath(
-                    "//label[normalize-space()='Employee Id']" +
-                            "/ancestor::div[contains(@class,'oxd-input-group')]//input"
-            );
+            LocatorUtils.inputByLabel("Employee Id");
 
     private final By searchButton =
             By.xpath("//button[normalize-space()='Search']");
 
-    private final By resetButton =
-            By.xpath("//button[normalize-space()='Reset']");
-
     private final By deleteButton =
-            By.cssSelector(
-                    "i.bi-trash"
-            );
+            By.cssSelector("i.bi-trash");
 
     private final By confirmDeleteButton =
-            By.xpath(
-                    "//button[normalize-space()='Yes, Delete']"
-            );
+            By.xpath("//button[normalize-space()='Yes, Delete']");
 
     private final By noRecordsMessage =
             By.xpath(
@@ -49,39 +37,27 @@ public class PIMPage {
             By.cssSelector("i.bi-pencil-fill");
 
     public PIMPage(WebDriver driver) {
-        this.driver = driver;
+        super(driver);
     }
 
     public AddEmployeePage navigateToAddEmployee() {
-
-        WaitUtils.waitForClickable(pimMenu).click();
-
-        WaitUtils.waitForClickable(addEmployeeMenu).click();
-
+        click(pimMenu);
+        click(addEmployeeMenu);
         return new AddEmployeePage(driver);
     }
 
     public PIMPage navigateToEmployeeList() {
-
-        WaitUtils.waitForClickable(pimMenu).click();
-
-        WaitUtils.waitForClickable(employeeListMenu).click();
-
+        click(pimMenu);
+        click(employeeListMenu);
         return this;
     }
 
-    public void searchByEmployeeId(
-            String employeeId) {
-
-        WaitUtils.waitForVisible(employeeIdSearch)
-                .sendKeys(employeeId);
-
-        WaitUtils.waitForClickable(searchButton)
-                .click();
+    public void searchByEmployeeId(String employeeId) {
+        enterText(employeeIdSearch, employeeId);
+        click(searchButton);
     }
 
-    public boolean isEmployeePresent(
-            String employeeId) {
+    public boolean isEmployeePresent(String employeeId) {
 
         By employeeRow = By.xpath(
                 "//div[@role='row']" +
@@ -90,47 +66,20 @@ public class PIMPage {
                         "']]"
         );
 
-        try {
-
-            return WaitUtils
-                    .waitForVisible(employeeRow)
-                    .isDisplayed();
-
-        } catch (Exception e) {
-
-            return false;
-        }
+        return isDisplayed(employeeRow);
     }
 
     public EmployeeDetailsPage editEmployee() {
-
-        WaitUtils.waitForClickable(editButton)
-                .click();
-
+        click(editButton);
         return new EmployeeDetailsPage(driver);
     }
 
     public void deleteEmployee() {
-
-        WaitUtils.waitForClickable(deleteButton)
-                .click();
-
-        WaitUtils.waitForClickable(
-                confirmDeleteButton
-        ).click();
+        click(deleteButton);
+        click(confirmDeleteButton);
     }
 
     public boolean isEmployeeDeleted() {
-
-        try {
-
-            return WaitUtils
-                    .waitForVisible(noRecordsMessage)
-                    .isDisplayed();
-
-        } catch (Exception e) {
-
-            return true;
-        }
+        return isDisplayed(noRecordsMessage);
     }
 }

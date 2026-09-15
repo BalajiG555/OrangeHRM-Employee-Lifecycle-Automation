@@ -1,6 +1,8 @@
 package com.api;
 
 import com.config.ConfigReader;
+import com.utils.TestLogger;
+
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 
@@ -13,13 +15,45 @@ public class EmployeeApiClient {
     public EmployeeApiClient() {
 
         RestAssured.baseURI =
-                ConfigReader.get("api.base.url");
+                ConfigReader.getRequired("api.base.url");
+
+        TestLogger.info(
+                EmployeeApiClient.class,
+                "API base URI configured for environment: "
+                        + ConfigReader.getEnvironment()
+        );
     }
 
-    // =========================================================
-    // API 1: Get OAuth Access Token
-    // =========================================================
-    public void authenticate(String authorizationCode) {
+    /**
+     * Authenticates using OAuth2 Authorization Code flow
+     * and stores the returned access token for subsequent APIs.
+     */
+    public void authenticate() {
+
+        String authorizationCode =
+                ConfigReader.getRequired(
+                        "api.authorization.code"
+                );
+
+        String clientId =
+                ConfigReader.getRequired(
+                        "api.client.id"
+                );
+
+        String clientSecret =
+                ConfigReader.getRequired(
+                        "api.client.secret"
+                );
+
+        String redirectUri =
+                ConfigReader.getRequired(
+                        "api.redirect.uri"
+                );
+
+        TestLogger.info(
+                EmployeeApiClient.class,
+                "Starting OAuth2 authentication."
+        );
 
         Response response =
                 given()
@@ -36,27 +70,34 @@ public class EmployeeApiClient {
                         )
                         .formParam(
                                 "client_id",
-                                ConfigReader.get("api.client.id")
+                                clientId
                         )
                         .formParam(
                                 "client_secret",
-                                ConfigReader.get("api.client.secret")
+                                clientSecret
                         )
                         .formParam(
                                 "redirect_uri",
-                                ConfigReader.get("api.redirect.uri")
+                                redirectUri
                         )
                         .when()
                         .post("/oauth2/token");
 
-        System.out.println("========================================");
-        System.out.println("API 1 - OAuth Token API");
-        System.out.println("Status Code: " + response.statusCode());
-        System.out.println("Response Body:");
-        System.out.println(response.asPrettyString());
-        System.out.println("========================================");
+        TestLogger.info(
+                EmployeeApiClient.class,
+                "OAuth token API status code: "
+                        + response.statusCode()
+        );
 
         if (response.statusCode() != 200) {
+
+            TestLogger.error(
+                    EmployeeApiClient.class,
+                    "OAuth token API failed.",
+                    new RuntimeException(
+                            response.asPrettyString()
+                    )
+            );
 
             throw new RuntimeException(
                     "OAuth token API failed. Status code: "
@@ -71,97 +112,87 @@ public class EmployeeApiClient {
         if (accessToken == null
                 || accessToken.isBlank()) {
 
-            throw new RuntimeException(
+            throw new IllegalStateException(
                     "Access token was not returned from OAuth API."
             );
         }
+
+        TestLogger.info(
+                EmployeeApiClient.class,
+                "Access token received successfully."
+        );
     }
 
-
-    // =========================================================
-    // API 2: Get Employees
-    // =========================================================
+    /**
+     * Fetch all employees using the OAuth access token.
+     */
     public Response getEmployees() {
 
         validateAccessToken();
 
         Response response =
                 given()
+                        .redirects()
+                        .follow(false)
                         .header(
                                 "Authorization",
                                 "Bearer " + accessToken
                         )
                         .queryParam("limit", 1000)
+                        .queryParam("offset", 0)
                         .when()
                         .get("/api/v2/pim/employees");
 
-        System.out.println("========================================");
-        System.out.println("API 2 - Get Employees API");
-        System.out.println("Status Code: " + response.statusCode());
-        System.out.println("Response Body:");
-        //System.out.println(response.asPrettyString());
-        System.out.println("========================================");
+        TestLogger.info(
+                EmployeeApiClient.class,
+                "Get Employees API status code: "
+                        + response.statusCode()
+        );
+
+        validateSuccessfulResponse(
+                response,
+                "Get Employees"
+        );
 
         return response;
     }
 
+    /**
+     * Find employee number using Employee ID.
+     */
+    public String findEmployeeNumber(
+            String employeeId) {
 
-    // =========================================================
-    // Find Employee Number from API 2 response
-    // =========================================================
-    public String findEmployeeNumber(String employeeId) {
+        Response response =
+                getEmployees();
 
-        Response response = getEmployees();
-
-        if (response.statusCode() != 200) {
-
-            throw new RuntimeException(
-                    "Get Employees API failed. Status code: "
-                            + response.statusCode()
-            );
-        }
-
-        String empNumber =
-                response.jsonPath()
-                        .getString(
-                                "data.find { it.employeeId == '"
-                                        + employeeId
-                                        + "' }.empNumber"
-                        );
-
-        if (empNumber == null
-                || empNumber.isBlank()
-                || empNumber.equals("null")) {
-
-            throw new RuntimeException(
-                    "Employee ID "
-                            + employeeId
-                            + " was not found in API 2 response."
-            );
-        }
-
-        System.out.println("========================================");
-        System.out.println("Employee Found");
-        System.out.println("Employee ID: " + employeeId);
-        System.out.println("Emp Number: " + empNumber);
-        System.out.println("========================================");
-
-        return empNumber;
+        return response.jsonPath()
+                .getString(
+                        "data.find { it.employeeId == '"
+                                + employeeId
+                                + "' }.empNumber"
+                );
     }
 
-
-    // =========================================================
-    // API 3: Get Employee Details
-    // =========================================================
-    public Response getEmployee(String empNumber) {
+    /**
+     * Fetch a specific employee using the employee number.
+     */
+    public Response getEmployee(
+            String empNumber) {
 
         validateAccessToken();
 
         Response response =
                 given()
+                        .redirects()
+                        .follow(false)
                         .header(
                                 "Authorization",
                                 "Bearer " + accessToken
+                        )
+                        .queryParam(
+                                "model",
+                                "detailed"
                         )
                         .when()
                         .get(
@@ -169,21 +200,34 @@ public class EmployeeApiClient {
                                         + empNumber
                         );
 
-        System.out.println("========================================");
-        System.out.println("API 3 - Get Employee Details API");
-        System.out.println("Emp Number: " + empNumber);
-        System.out.println("Status Code: " + response.statusCode());
-        System.out.println("Response Body:");
-        System.out.println(response.asPrettyString());
-        System.out.println("========================================");
+        TestLogger.info(
+                EmployeeApiClient.class,
+                "Get Employee API status code: "
+                        + response.statusCode()
+        );
+
+        validateSuccessfulResponse(
+                response,
+                "Get Employee"
+        );
 
         return response;
     }
 
+    /**
+     * Check whether an employee exists through API.
+     */
+    public boolean employeeExists(
+            String employeeId) {
 
-    // =========================================================
-    // Validate Access Token
-    // =========================================================
+        String empNumber =
+                findEmployeeNumber(employeeId);
+
+        return empNumber != null
+                && !empNumber.isBlank()
+                && !empNumber.equals("null");
+    }
+
     private void validateAccessToken() {
 
         if (accessToken == null
@@ -191,7 +235,32 @@ public class EmployeeApiClient {
 
             throw new IllegalStateException(
                     "Access token is missing. "
-                            + "Please authenticate first."
+                            + "Call authenticate() first."
+            );
+        }
+    }
+
+    private void validateSuccessfulResponse(
+            Response response,
+            String operation) {
+
+        if (response.statusCode() < 200
+                || response.statusCode() >= 300) {
+
+            TestLogger.error(
+                    EmployeeApiClient.class,
+                    operation
+                            + " API failed with status code: "
+                            + response.statusCode(),
+                    new RuntimeException(
+                            response.asPrettyString()
+                    )
+            );
+
+            throw new RuntimeException(
+                    operation
+                            + " API failed. Status code: "
+                            + response.statusCode()
             );
         }
     }

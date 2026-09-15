@@ -1,17 +1,16 @@
 package com.pages;
 
 import com.models.Employee;
-import com.utils.WaitUtils;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
+import com.utils.LocatorUtils;
 
-import java.io.File;
+import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-public class AddEmployeePage {
+import java.io.File;
 
-    private final WebDriver driver;
+public class AddEmployeePage extends BasePage {
 
     private final By firstName =
             By.name("firstName");
@@ -20,10 +19,7 @@ public class AddEmployeePage {
             By.name("lastName");
 
     private final By employeeId =
-            By.xpath(
-                    "//label[normalize-space()='Employee Id']" +
-                            "/ancestor::div[contains(@class,'oxd-input-group')]//input"
-            );
+            LocatorUtils.inputByLabel("Employee Id");
 
     private final By profilePicture =
             By.cssSelector("input[type='file']");
@@ -35,56 +31,62 @@ public class AddEmployeePage {
             By.cssSelector(".oxd-toast--success");
 
     private final By personalDetailsHeader =
-            By.xpath(
-                    "//h6[normalize-space()='Personal Details']"
-            );
+            By.xpath("//h6[normalize-space()='Personal Details']");
 
     public AddEmployeePage(WebDriver driver) {
-        this.driver = driver;
+        super(driver);
     }
 
-    public EmployeeDetailsPage createEmployee(
-            Employee employee) {
+    public EmployeeDetailsPage createEmployee(Employee employee) {
 
-        WaitUtils.waitForVisible(firstName)
-                .sendKeys(employee.getFirstName());
+        enterText(
+                firstName,
+                employee.getFirstName()
+        );
 
-        WaitUtils.waitForVisible(lastName)
-                .sendKeys(employee.getLastName());
+        enterText(
+                lastName,
+                employee.getLastName()
+        );
 
-        WaitUtils.waitForVisible(employeeId)
-                .clear();
-
-        enterEmployeeId(employee.getEmployeeId());
+        enterEmployeeId(
+                employee.getEmployeeId()
+        );
 
         String imagePath =
-                new File(employee.getProfilePicture()).getAbsolutePath();
+                new File(
+                        employee.getProfilePicture()
+                ).getAbsolutePath();
 
-        driver.findElement(profilePicture)
-                .sendKeys(imagePath);
+        driver.findElement(profilePicture).sendKeys(imagePath);
 
-        WaitUtils.waitForClickable(saveButton)
-                .click();
+        click(saveButton);
 
-        WaitUtils.waitForVisible(personalDetailsHeader);
+        waitForVisible(personalDetailsHeader);
 
         return new EmployeeDetailsPage(driver);
     }
 
     private void enterEmployeeId(String id) {
-        WebElement field = WaitUtils.waitForVisible(employeeId);
+
+        WebElement field =
+                waitForVisible(employeeId);
 
         field.click();
-        field.sendKeys(Keys.CONTROL, "a");
-        field.sendKeys(Keys.BACK_SPACE);
+
+        field.sendKeys(
+                Keys.CONTROL,
+                "a"
+        );
+
+        field.sendKeys(
+                Keys.BACK_SPACE
+        );
+
         field.sendKeys(id);
     }
 
     public boolean isSuccessToastDisplayed() {
-
-        return WaitUtils
-                .waitForVisible(successToast)
-                .isDisplayed();
+        return isDisplayed(successToast);
     }
-
 }

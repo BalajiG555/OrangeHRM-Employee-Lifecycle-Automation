@@ -1,30 +1,21 @@
 package com.pages;
 
+import com.utils.LocatorUtils;
 import com.utils.WaitUtils;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-public class EmployeeDetailsPage {
-
-    private final WebDriver driver;
+public class EmployeeDetailsPage extends BasePage {
 
     private final By jobTab =
             By.xpath("//a[normalize-space()='Job']");
 
     private final By jobTitleDropdown =
-            By.xpath(
-                    "//label[normalize-space()='Job Title']" +
-                            "/ancestor::div[contains(@class,'oxd-input-group')]" +
-                            "//div[contains(@class,'oxd-select-text')]"
-            );
+            LocatorUtils.dropdownByLabel("Job Title");
 
     private final By employmentStatusDropdown =
-            By.xpath(
-                    "//label[normalize-space()='Employment Status']" +
-                            "/ancestor::div[contains(@class,'oxd-input-group')]" +
-                            "//div[contains(@class,'oxd-select-text')]"
-            );
+            LocatorUtils.dropdownByLabel("Employment Status");
 
     private final By saveButton =
             By.xpath("//button[normalize-space()='Save']");
@@ -39,36 +30,21 @@ public class EmployeeDetailsPage {
             By.cssSelector(".oxd-form-loader");
 
     public EmployeeDetailsPage(WebDriver driver) {
-        this.driver = driver;
+        super(driver);
     }
 
     public void updateJobTitle(String jobTitle) {
 
         WaitUtils.waitForInvisibility(formLoader);
 
-        WaitUtils.waitForClickable(jobTab)
-                .click();
+        click(jobTab);
 
-        /*
-         * OrangeHRM loads the Job form asynchronously.
-         * The loader can appear after the Job tab is clicked,
-         * so let the click helper handle the race condition.
-         */
         WaitUtils.clickAfterLoaderDisappears(
                 jobTitleDropdown,
                 formLoader
         );
 
-        By option =
-                By.xpath(
-                        "//div[@role='option']" +
-                                "//span[normalize-space()='" +
-                                jobTitle +
-                                "']"
-                );
-
-        WaitUtils.waitForClickable(option)
-                .click();
+        click(LocatorUtils.optionByText(jobTitle));
 
         WaitUtils.waitForInvisibility(formLoader);
     }
@@ -80,16 +56,7 @@ public class EmployeeDetailsPage {
                 formLoader
         );
 
-        By option =
-                By.xpath(
-                        "//div[@role='option']" +
-                                "//span[normalize-space()='" +
-                                status +
-                                "']"
-                );
-
-        WaitUtils.waitForClickable(option)
-                .click();
+        click(LocatorUtils.optionByText(status));
 
         WaitUtils.waitForInvisibility(formLoader);
     }
@@ -101,14 +68,11 @@ public class EmployeeDetailsPage {
                 formLoader
         );
 
-        WaitUtils.waitForVisible(successToast);
+        waitForVisible(successToast);
     }
 
     public boolean isEmployeeCreatedSuccessfully() {
-
-        return WaitUtils
-                .waitForVisible(personalDetailsHeader)
-                .isDisplayed();
+        return isDisplayed(personalDetailsHeader);
     }
 
     public boolean isUpdateSuccessful(
@@ -117,16 +81,14 @@ public class EmployeeDetailsPage {
 
         WaitUtils.waitForInvisibility(formLoader);
 
-        WaitUtils.waitForVisible(jobTitleDropdown);
-        WaitUtils.waitForVisible(employmentStatusDropdown);
+        waitForVisible(jobTitleDropdown);
+        waitForVisible(employmentStatusDropdown);
 
         String actualJobTitle =
-                driver.findElement(jobTitleDropdown)
-                        .getText();
+                getText(jobTitleDropdown);
 
         String actualEmploymentStatus =
-                driver.findElement(employmentStatusDropdown)
-                        .getText();
+                getText(employmentStatusDropdown);
 
         return actualJobTitle.equals(expectedJobTitle)
                 && actualEmploymentStatus.equals(expectedEmploymentStatus);

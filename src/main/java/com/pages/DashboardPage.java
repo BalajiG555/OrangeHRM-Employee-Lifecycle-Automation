@@ -1,13 +1,9 @@
 package com.pages;
 
-import com.utils.WaitUtils;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-public class DashboardPage {
-
-    private final WebDriver driver;
+public class DashboardPage extends BasePage {
 
     private final By dashboardHeader =
             By.xpath("//h6[normalize-space()='Dashboard']");
@@ -18,25 +14,24 @@ public class DashboardPage {
     private final By logoutLink =
             By.xpath("//a[normalize-space()='Logout']");
 
+    private final By adminMenu =
+            By.xpath("//span[normalize-space()='Admin']");
+
     public DashboardPage(WebDriver driver) {
-        this.driver = driver;
+        super(driver);
     }
 
     public boolean isDashboardDisplayed() {
+        return isDisplayed(dashboardHeader);
+    }
 
-        return WaitUtils
-                .waitForVisible(dashboardHeader)
-                .isDisplayed();
+    public boolean isAdminModuleDisplayed() {
+        return isDisplayed(adminMenu);
     }
 
     public LoginPage logout() {
-
-        WaitUtils.waitForClickable(userDropdown)
-                .click();
-
-        WaitUtils.waitForClickable(logoutLink)
-                .click();
-
+        click(userDropdown);
+        click(logoutLink);
         return new LoginPage(driver);
     }
 }

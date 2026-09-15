@@ -1,8 +1,7 @@
 {
   "firstName": "Automation",
   "lastName": "Tester",
-  "employeeId": "",
   "jobTitle": "QA Engineer",
-  "employmentStatus": "Full-Time Permanent",
+  "employmentStatus": "Freelance",
   "profilePicture": "src/test/resources/testdata/profile.png"
 }

@@ -44,6 +44,9 @@ public final class DriverFactory {
                 .pageLoadTimeout(Duration.ofSeconds(30));
 
         DRIVER.set(driver);
+
+        // Navigate to the configured application URL
+        driver.get( ConfigReader.getRequired("base.url") );
     }
 
     public static WebDriver getDriver() {

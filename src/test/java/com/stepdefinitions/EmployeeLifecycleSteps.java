@@ -2,6 +2,7 @@ package com.stepdefinitions;
 
 import com.api.EmployeeApiClient;
 import com.config.ConfigReader;
+import com.context.TestContext;
 import com.driver.DriverFactory;
 import com.models.Employee;
 import com.pages.AddEmployeePage;
@@ -9,72 +10,68 @@ import com.pages.DashboardPage;
 import com.pages.EmployeeDetailsPage;
 import com.pages.LoginPage;
 import com.pages.PIMPage;
-import com.utils.JsonDataReader;
+import com.utils.TestDataGenerator;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-
 import io.qameta.allure.Allure;
 
 import io.restassured.response.Response;
 
+import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public class EmployeeLifecycleSteps {
 
+    private final TestContext testContext =
+            new TestContext();
+
+    private WebDriver driver;
+
     private LoginPage loginPage;
-
     private DashboardPage dashboardPage;
-
     private PIMPage pimPage;
-
     private AddEmployeePage addEmployeePage;
-
     private EmployeeDetailsPage employeeDetailsPage;
-
-    private Employee employee;
 
     private EmployeeApiClient apiClient;
 
-    private Response apiResponse;
-
+    private boolean isApiValidationEnabled;
 
     @Given("I login to OrangeHRM with valid credentials")
     public void loginToOrangeHRM() {
 
-        employee = JsonDataReader.readEmployeeData();
+        driver = DriverFactory.getDriver();
 
-        String uniqueEmployeeId =
-                "A" +
-                        LocalDateTime.now()
-                                .format(
-                                        DateTimeFormatter
-                                                .ofPattern("ddHHmmss")
+        Employee employee =
+                TestDataGenerator.createEmployee();
 
-                                );
-        System.out.println(uniqueEmployeeId);
-
-        employee.setEmployeeId(
-                uniqueEmployeeId
-        );
+        testContext.setEmployee(employee);
 
         loginPage =
-                new LoginPage(
-                        DriverFactory.getDriver()
-                );
+                new LoginPage(driver);
 
         dashboardPage =
-                loginPage.login(
-                        ConfigReader.get("username"),
-                        ConfigReader.get("password")
-                );
+                loginPage.loginWithAdminCredentials();
 
+        isApiValidationEnabled =
+                ConfigReader.getBoolean(
+                        "api.validation.enabled"
+                );
     }
 
+    @Given("I login to OrangeHRM with ESS credentials")
+    public void loginWithEssCredentials() {
+
+        driver = DriverFactory.getDriver();
+
+        loginPage =
+                new LoginPage(driver);
+
+        dashboardPage =
+                loginPage.loginWithEssCredentials();
+    }
 
     @Then("I should be redirected to the dashboard")
     public void verifyDashboard() {
@@ -85,29 +82,50 @@ public class EmployeeLifecycleSteps {
         );
     }
 
+    @Then("the ESS user should be redirected to the dashboard")
+    public void verifyEssDashboard() {
+
+        Assert.assertTrue(
+                dashboardPage.isDashboardDisplayed(),
+                "ESS user should be redirected to the dashboard."
+        );
+    }
+
+    @Then("the ESS user should not have access to the Admin module")
+    public void verifyEssAdminAccess() {
+
+        Assert.assertFalse(
+                dashboardPage.isAdminModuleDisplayed(),
+                "ESS user should not have access to the Admin module."
+        );
+    }
 
     @When("I navigate to the Add Employee page")
     public void navigateToAddEmployee() {
 
         pimPage =
-                new PIMPage(
-                        DriverFactory.getDriver()
-                );
+                new PIMPage(driver);
 
         addEmployeePage =
                 pimPage.navigateToAddEmployee();
     }
 
-
     @When("I create a new employee using test data")
     public void createEmployee() {
 
-        employeeDetailsPage =
-                addEmployeePage.createEmployee(
-                        employee
-                );
-    }
+        Employee employee =
+                testContext.getEmployee();
 
+        Assert.assertNotNull(
+                employee,
+                "Employee test data should be available."
+        );
+
+        employeeDetailsPage =
+                addEmployeePage.createEmployee(employee);
+
+        testContext.markEmployeeCreated();
+    }
 
     @Then("the employee should be created successfully")
     public void verifyEmployeeCreation() {
@@ -119,25 +137,31 @@ public class EmployeeLifecycleSteps {
         );
     }
 
-
     @When("I search for the employee using Employee ID")
     public void searchEmployee() {
 
         pimPage =
-                new PIMPage(
-                        DriverFactory.getDriver()
-                );
+                new PIMPage(driver);
 
         pimPage.navigateToEmployeeList();
 
         pimPage.searchByEmployeeId(
-                employee.getEmployeeId()
+                testContext
+                        .getEmployee()
+                        .getEmployeeId()
         );
     }
 
-
     @When("I update the employee Job Title and Employment Status")
     public void updateEmployeeDetails() {
+
+        Employee employee =
+                testContext.getEmployee();
+
+        Assert.assertNotNull(
+                employee,
+                "Employee test data should be available."
+        );
 
         employeeDetailsPage =
                 pimPage.editEmployee();
@@ -153,36 +177,27 @@ public class EmployeeLifecycleSteps {
         employeeDetailsPage.saveChanges();
     }
 
-
     @Then("the employee details should be updated successfully")
     public void verifyEmployeeUpdate() {
 
+        Employee employee =
+                testContext.getEmployee();
+
         Assert.assertTrue(
-                employeeDetailsPage
-                        .isUpdateSuccessful(employee.getJobTitle(),
-                                employee.getEmploymentStatus()),
+                employeeDetailsPage.isUpdateSuccessful(
+                        employee.getJobTitle(),
+                        employee.getEmploymentStatus()
+                ),
                 "Employee details should be updated successfully."
         );
     }
 
-
     @When("I validate the employee details through API")
     public void validateEmployeeThroughAPI() {
 
-        boolean apiEnabled =
-                ConfigReader.getBoolean(
-                        "api.validation.enabled"
-                );
+        if (!isApiValidationEnabled) {
 
-        if (!apiEnabled) {
-
-            Allure.addAttachment(
-                    "API Validation",
-                    "text/plain",
-                    "API validation skipped because " +
-                            "api.validation.enabled=false",
-                    ".txt"
-            );
+            addApiValidationSkippedAttachment();
 
             return;
         }
@@ -190,32 +205,44 @@ public class EmployeeLifecycleSteps {
         apiClient =
                 new EmployeeApiClient();
 
-        // API 1 - Get OAuth token
-        apiClient.authenticate(
-                ConfigReader.get("api.authorization.code")
-        );
+        apiClient.authenticate();
 
-        // Get Employee ID dynamically from Employee POJO
         String employeeId =
-                employee.getEmployeeId();
+                testContext
+                        .getEmployee()
+                        .getEmployeeId();
 
-        // API 2 - Find Employee ID and capture empNumber
         String empNumber =
                 apiClient.findEmployeeNumber(
                         employeeId
                 );
 
-        // API 3 - Use empNumber to get employee details
-        apiResponse =
-                apiClient.getEmployee(
-                        empNumber
-                );
+        Assert.assertNotNull(
+                empNumber,
+                "Employee should exist in API."
+        );
 
-        Allure.addAttachment(
-                "API Response",
-                "application/json",
-                apiResponse.asPrettyString(),
-                ".json"
+        Response response =
+                apiClient.getEmployee(empNumber);
+
+        testContext.setApiResponse(response);
+
+        addApiResponseAttachment();
+    }
+
+    @Then("the API employee details should match the UI details")
+    public void compareUIAndAPI() {
+
+        if (!isApiValidationEnabled) {
+            return;
+        }
+
+        Response apiResponse =
+                testContext.getApiResponse();
+
+        Assert.assertNotNull(
+                apiResponse,
+                "API response should be available."
         );
 
         Assert.assertEquals(
@@ -223,32 +250,17 @@ public class EmployeeLifecycleSteps {
                 200,
                 "Employee should exist through API."
         );
-    }
 
-
-    @Then("the API employee details should match the UI details")
-    public void compareUIAndAPI() {
-
-        boolean apiEnabled =
-                ConfigReader.getBoolean(
-                        "api.validation.enabled"
-                );
-
-        if (!apiEnabled) {
-            return;
-        }
+        Employee employee =
+                testContext.getEmployee();
 
         String firstName =
                 apiResponse.jsonPath()
-                        .getString(
-                                "data.firstName"
-                        );
+                        .getString("data.firstName");
 
         String lastName =
                 apiResponse.jsonPath()
-                        .getString(
-                                "data.lastName"
-                        );
+                        .getString("data.lastName");
 
         Assert.assertEquals(
                 firstName,
@@ -263,19 +275,21 @@ public class EmployeeLifecycleSteps {
         );
     }
 
-
     @When("I delete the employee")
     public void deleteEmployee() {
 
         pimPage.navigateToEmployeeList();
 
         pimPage.searchByEmployeeId(
-                employee.getEmployeeId()
+                testContext
+                        .getEmployee()
+                        .getEmployeeId()
         );
 
         pimPage.deleteEmployee();
-    }
 
+        testContext.markEmployeeDeleted();
+    }
 
     @Then("the employee should no longer exist in the UI")
     public void verifyEmployeeDeletedFromUI() {
@@ -283,7 +297,9 @@ public class EmployeeLifecycleSteps {
         pimPage.navigateToEmployeeList();
 
         pimPage.searchByEmployeeId(
-                employee.getEmployeeId()
+                testContext
+                        .getEmployee()
+                        .getEmployeeId()
         );
 
         Assert.assertTrue(
@@ -292,53 +308,79 @@ public class EmployeeLifecycleSteps {
         );
     }
 
-
     @Then("the employee should no longer exist through API")
     public void verifyEmployeeDeletedFromAPI() {
 
-        boolean apiEnabled =
-                ConfigReader.getBoolean(
-                        "api.validation.enabled"
-                );
-
-        if (!apiEnabled) {
+        if (!isApiValidationEnabled) {
             return;
         }
 
-        Response response =
-                apiClient.getEmployee(
-                        employee.getEmployeeId()
+        if (apiClient == null) {
+
+            apiClient =
+                    new EmployeeApiClient();
+
+            apiClient.authenticate();
+        }
+
+        boolean employeeExists =
+                apiClient.employeeExists(
+                        testContext
+                                .getEmployee()
+                                .getEmployeeId()
                 );
 
-        Assert.assertEquals(
-                response.statusCode(),
-                404,
-                "Deleted employee should not exist through API."
+        Assert.assertFalse(
+                employeeExists,
+                "Deleted employee should no longer exist through API."
         );
     }
-
 
     @When("I logout")
     public void logout() {
 
         dashboardPage =
-                new DashboardPage(
-                        DriverFactory.getDriver()
-                );
+                new DashboardPage(driver);
 
         loginPage =
                 dashboardPage.logout();
     }
 
-
     @Then("I should be redirected to the login page")
     public void verifyLogout() {
 
         Assert.assertTrue(
-                DriverFactory.getDriver()
-                        .getCurrentUrl()
+                driver.getCurrentUrl()
                         .contains("/auth/login"),
                 "User should be redirected to login page after logout."
+        );
+    }
+
+    private void addApiValidationSkippedAttachment() {
+
+        Allure.addAttachment(
+                "API Validation",
+                "text/plain",
+                "API validation skipped because " +
+                        "api.validation.enabled=false",
+                ".txt"
+        );
+    }
+
+    private void addApiResponseAttachment() {
+
+        Response response =
+                testContext.getApiResponse();
+
+        if (response == null) {
+            return;
+        }
+
+        Allure.addAttachment(
+                "API Response",
+                "application/json",
+                response.asPrettyString(),
+                ".json"
         );
     }
 }
